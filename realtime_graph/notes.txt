@@ -1,0 +1,26 @@
+wifi:
+comp@comp:~$ hostname -I
+192.168.1.100 
+
+const char* serverUrl = "http://192.168.1.100:8000/api/data/";
+python manage.py runserver 192.168.1.100:8000
+
+
+
+
+
+
+
+
+smartphone:
+comp@comp:~$ ip addr show
+...
+    inet 172.30.172.234/24 brd 172.30.172.255 scope global dynamic noprefixroute wlp8s0
+...
+
+
+comp@comp:~$ hostname -I
+172.30.172.234 
+
+python manage.py runserver 172.30.172.234:8000
+const char* serverUrl = "http://172.30.172.234:8000/api/data/";

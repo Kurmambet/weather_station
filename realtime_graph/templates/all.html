@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>История данных</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-4">
+    <h1 class="text-center mb-4">История всех данных</h1>
+    <div class="row">
+        <div class="col-md-4">
+            <h4 class="text-center">Температура (°C)</h4>
+            <canvas id="tempChart"></canvas>
+        </div>
+        <div class="col-md-4">
+            <h4 class="text-center">Влажность (%)</h4>
+            <canvas id="humChart"></canvas>
+        </div>
+        <div class="col-md-4">
+            <h4 class="text-center">Давление (hPa)</h4>
+            <canvas id="presChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<script>
+const data = {{ data|safe }};  // safe - не экранировать json из views.py
+
+const createChart = (ctxId, label, color) => {
+    const ctx = document.getElementById(ctxId);
+    return new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: label,
+                data: [],
+                borderColor: color,
+                fill: false,
+                tension: 0.1
+            }]
+        },
+        options: {
+            scales: {
+                x: { title: { display: true, text: 'Время' } },
+                y: { beginAtZero: false }
+            }
+        }
+    });
+};
+
+const tempChart = createChart('tempChart', 'Температура', 'rgb(255, 99, 132)');
+const humChart = createChart('humChart', 'Влажность', 'rgb(54, 162, 235)');
+const presChart = createChart('presChart', 'Давление', 'rgb(255, 206, 86)');
+
+data.forEach(d => {
+    const timeLabel = new Date(d.timestamp).toLocaleString();
+    tempChart.data.labels.push(timeLabel);
+    tempChart.data.datasets[0].data.push(d.temperature);
+
+    humChart.data.labels.push(timeLabel);
+    humChart.data.datasets[0].data.push(d.humidity);
+
+    presChart.data.labels.push(timeLabel);
+    presChart.data.datasets[0].data.push(d.pressure);
+});
+
+tempChart.update();
+humChart.update();
+presChart.update();
+</script>
+</body>
+</html>

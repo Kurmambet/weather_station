@@ -30,15 +30,15 @@
 // <body>
 // <h1>Weather Station</h1>
 // <div class="box">
-//   <div>🌡 Temperature</div>
+//   <div> Temperature</div>
 //   <div class="value" id="temp">--</div>
 // </div>
 // <div class="box">
-//   <div>💧 Humidity</div>
+//   <div> Humidity</div>
 //   <div class="value" id="hum">--</div>
 // </div>
 // <div class="box">
-//   <div>⏱ Pressure</div>
+//   <div> Pressure</div>
 //   <div class="value" id="pres">--</div>
 // </div>
 
@@ -107,7 +107,7 @@
 // void loop() {
 //   server.handleClient();
 // }
-}
+// }
 //   Serial.println();
 //   Serial.print("Connected! IP address: ");
 //   Serial.println(WiFi.localIP());
@@ -170,30 +170,38 @@ GyverBME280 bme;
 GyverHTU21D htu;
 
 // ===== Wi-Fi =====
-const char* ssid = "MERCUSYS_9A2E";
-const char* password = "31324120";
+const char* ssid = "MERCUSYS_9A2E"; // литерал в памяти Flash, не RAM
+const char* password = "31324120"; // указатель на первый символ строки
 
 // ===== URL Django эндпоинта =====
-const char* serverUrl = "http://192.168.1.103:8000/api/data/";
+const char* serverUrl = "http://192.168.1.100:8000/api/data/";
+// const char* serverUrl = "http://172.30.172.234:8000/api/data/";
 
 void setup() {
   Serial.begin(115200);
+
+// D2 — это SDA (data line — линия данных)
+// D1 — это SCL (clock line — линия тактов)
+
   Wire.begin(D2, D1);
 
   // Wi-Fi подключение
   WiFi.begin(ssid, password);
   Serial.print("Connecting to WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
+
+  while (WiFi.status() != WL_CONNECTED) { 
     delay(500);
-    Serial.print(".");
+    Serial.print(".");  // пока не подключится фигачит точки в монитор порта
   }
+
   Serial.println("\nConnected!");
   Serial.print("IP: ");
   Serial.println(WiFi.localIP());
 
   // Инициализация датчиков
-  if (!bme.begin(0x76)) Serial.println("BME280 not found!");
-  htu.begin();
+  // 0x76 7-битный адрес датчика в шине i2c в 16-ричном формате
+  if (!bme.begin(0x76)) Serial.println("BME280 not found!"); 
+  htu.begin(); // адрес 0x40 - влажность
 }
 
 void loop() {
@@ -211,22 +219,24 @@ void loop() {
 
     Serial.println("Sending data: " + json);
 
-    WiFiClient client;
-    HTTPClient http;
-    http.begin(client, serverUrl);              
+    WiFiClient client; // tcp клиент для подключения по ip:port. низкоуровневое соединение
+    HTTPClient http;  // формирует заголовки. выполняет методы get, post... обертка над WiFiClient для HTTP
+    http.begin(client, serverUrl);  // связывает HTTP-клиент с TCP-соединением и URL сервера             
     http.addHeader("Content-Type", "application/json");
 
     int httpCode = http.POST(json);
     if (httpCode > 0) {
       Serial.printf("Response code: %d\n", httpCode);
-      String payload = http.getString();
+      String payload = http.getString(); // тело ответа {"status": "ok"} из django
       Serial.println(payload);
-    } else {
+    } 
+    else {
       Serial.printf("Error sending POST: %s\n", http.errorToString(httpCode).c_str());
     }
 
-    http.end();
-  } else {
+    http.end(); // закрывает TCP-соединение, очищает буферы, освобождает память
+  } 
+  else {
     Serial.println("WiFi disconnected, reconnecting...");
     WiFi.reconnect();
   }
